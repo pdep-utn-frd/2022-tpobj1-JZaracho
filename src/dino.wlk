@@ -1,28 +1,36 @@
 import wollok.game.*
     
-const velocidad = 250
-
 object juego{
+const rapidez = 300
 
 	method configurar(){
 		game.width(12)
-		game.height(8)
+		game.height(5)
 		game.title("Dino Game")
 		game.addVisual(suelo)
 		game.addVisual(cactus)
 		game.addVisual(dino)
 		game.addVisual(reloj)
-	
-		keyboard.space().onPressDo{ self.jugar()}
+		game.addVisual(manzana)
+		game.cellSize(50)
+		game.boardGround("fondo.png")
+
+		keyboard.space().onPressDo{self.jugar()}
 		
 		game.onCollideDo(dino,{ obstaculo => obstaculo.chocar()})
 		
-	} 
+} 
 	
-	method    iniciar(){
+	method velocidad(){
+		return rapidez
+ 	}
+
+	
+	method iniciar(){
 		dino.iniciar()
 		reloj.iniciar()
 		cactus.iniciar()
+		manzana.iniciar()
 	}
 	
 	method jugar(){
@@ -40,15 +48,21 @@ object juego{
 		cactus.detener()
 		reloj.detener()
 		dino.morir()
+		manzana.detener()
 	}
-	
+
 }
 
 object gameOver {
 	method position() = game.center()
-	method text() = "GAME OVER"
+	method text() = "GAME OVER, recolectaste "+ manzana.text() + " manzanas!"
+	method textColor() = paleta.negro()
 	
+}
 
+object paleta {
+	const property negro = "000000"
+	
 }
 
 object reloj {
@@ -56,31 +70,36 @@ object reloj {
 	var tiempo = 0
 	
 	method text() = tiempo.toString()
-	method position() = game.at(1, game.height()-1)
+	method textColor() = paleta.negro()
+	method position() = game.at(game.width()/2, game.height()-1)
 	
 	method pasarTiempo() {
-		tiempo = tiempo +1
+		tiempo = tiempo + 1
+		return tiempo
 	}
+	
 	method iniciar(){
 		tiempo = 0
 		game.onTick(100,"tiempo",{self.pasarTiempo()})
 	}
+
 	method detener(){
 		game.removeTickEvent("tiempo")
 	}
+	
 }
 
 object cactus {
 	 
-	const posicionInicial = game.at(game.width()-1,suelo.position().y())
+	const posicionInicial = game.at(game.width()-1, suelo.position().y())
 	var position = posicionInicial
 
-	method image() = "cactus.png"
+	method image() = "cactus 2.png"
 	method position() = position
 	
 	method iniciar(){
 		position = posicionInicial
-		game.onTick(velocidad,"moverCactus",{self.mover()})
+		game.onTick(juego.velocidad(),"moverCactus",{self.mover()})
 	}
 	
 	method mover(){
@@ -95,27 +114,28 @@ object cactus {
     method detener(){
 		game.removeTickEvent("moverCactus")
 	}
+	
 }
+
 
 object suelo{
 	
 	method position() = game.origin().up(1)
 	
-	method image() = "suelo.png"
 }
 
 
 object dino {
 	var vivo = true
-	var position = game.at(1,suelo.position().y())
+	var position = game.at(1, suelo.position().y())	
 	
-	method image() = "dino.png"
+	method image() = "dino2.png"
 	method position() = position
 	
 	method saltar(){
 		if(position.y() == suelo.position().y()) {
 			self.subir()
-			game.schedule(velocidad*3,{self.bajar()})
+			game.schedule((juego.velocidad())*3,{self.bajar()})
 		}
 	}
 	
@@ -127,7 +147,7 @@ object dino {
 		position = position.down(1)
 	}
 	method morir(){
-		game.say(self,"¡Auch!")
+		game.say(self,"¡Auch! x_x")
 		vivo = false
 	}
 	method iniciar() {
@@ -136,4 +156,44 @@ object dino {
 	method estaVivo() {
 		return vivo
 	}
+	
+	method textColor() = paleta.negro()
+	
 }
+
+object manzana{
+	const posicionInicial = game.at(game.width()+7, suelo.position().y())
+	var posicion = posicionInicial
+	var manz = 0 
+	
+	method image() = "manzana.png"
+	method position() = posicion
+	
+	method iniciar(){
+		posicion = posicionInicial
+		game.onTick(juego.velocidad(),"moverManzana",{self.mover()})
+		manz = 0
+	}
+	method mover(){
+		posicion = posicion.left(1)
+		if (posicion.x() == -2)
+			posicion = posicionInicial
+	}
+	method chocar(){
+		manz = manz +1 
+		posicion = game.at(-1,-1)
+		return manz 
+}
+				
+	method text() = manz.toString()
+	method textColor() = paleta.negro()
+	
+	method detener(){
+		game.removeTickEvent("moverManzana")
+	}
+	
+}
+
+
+
+
